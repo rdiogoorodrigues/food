@@ -1,7 +1,9 @@
 import { create } from 'zustand'
+import { buildPlanRecipes, dietDay, type DietDayId, type DietMeal } from '../data/nutritionPlan'
 import { buildSeedRecipes } from '../data/seedRecipes'
+import { assignDietDays, dietFixedSlots } from '../lib/diet'
 import { DEFAULT_QUOTAS, generateWeek, type GenerateResult } from '../lib/generator'
-import { addDays, weekDays } from '../lib/date'
+import { addDays, today, weekDays } from '../lib/date'
 import { uid } from '../lib/id'
 import type { Aisle, AppData, DayPlan, MealType, Recipe, Settings, Slot, SoupVariant } from '../types'
 
@@ -9,12 +11,13 @@ export const DEFAULT_SETTINGS: Settings = {
   quotas: DEFAULT_QUOTAS,
   soupBatchesPerWeek: 2,
   noRepeatDays: 14,
+  nutrition: { enabled: true, templateWeekdays: [0, 1, 2, 3] },
 }
 
 export function createInitialData(): AppData {
   return {
     version: 1,
-    recipes: buildSeedRecipes(),
+    recipes: [...buildSeedRecipes(), ...buildPlanRecipes()],
     plan: {},
     settings: DEFAULT_SETTINGS,
     shopping: { checked: {}, extras: {} },
@@ -26,11 +29,19 @@ export function createInitialData(): AppData {
 export function migrate(raw: Partial<AppData> | null | undefined): AppData {
   const base = createInitialData()
   if (!raw || !Array.isArray(raw.recipes)) return base
+  // Receitas do plano alimentar acrescentadas a dados antigos.
+  const missingPlan = buildPlanRecipes().filter((r) => !raw.recipes!.some((x) => x.id === r.id))
   return {
     ...base,
     ...raw,
     version: 1,
-    settings: { ...DEFAULT_SETTINGS, ...raw.settings, quotas: { ...DEFAULT_QUOTAS, ...raw.settings?.quotas } },
+    recipes: missingPlan.length ? [...raw.recipes, ...missingPlan] : raw.recipes,
+    settings: {
+      ...DEFAULT_SETTINGS,
+      ...raw.settings,
+      quotas: { ...DEFAULT_QUOTAS, ...raw.settings?.quotas },
+      nutrition: { ...DEFAULT_SETTINGS.nutrition, ...raw.settings?.nutrition },
+    },
     shopping: { checked: raw.shopping?.checked ?? {}, extras: raw.shopping?.extras ?? {} },
     plan: raw.plan ?? {},
   }
@@ -56,6 +67,9 @@ interface Store {
   copySlot(from: SlotRef, to: SlotRef): void
   addLeftovers(dinnerDate: string): void
   setSoup(date: string, soup: SoupVariant | undefined): void
+  /** Define o dia do plano alimentar; `applyMeals` coloca também o almoço e jantar do plano. */
+  setDietDay(date: string, day: DietDayId | undefined, applyMeals: boolean): void
+  toggleDietDone(date: string, meal: DietMeal): void
   generate(weekStart: string): GenerateResult
   clearWeek(weekStart: string): void
 
@@ -155,9 +169,34 @@ export const useStore = create<Store>((set, get) => {
 
     setSoup: (date, soup) => mutate((d) => withDay(d, date, (day) => ({ ...day, soup }))),
 
+    setDietDay: (date, dayId, applyMeals) =>
+      mutate((d) => {
+        let out = withDay(d, date, (day) => ({ ...day, diet: { ...day.diet, day: dayId } }))
+        const t = dietDay(dayId)
+        if (t && applyMeals) {
+          out = putSlot(out, { date, meal: 'lunch' }, { kind: 'recipe', recipeId: t.lunch.recipeId })
+          out = putSlot(out, { date, meal: 'dinner' }, { kind: 'recipe', recipeId: t.dinner.recipeId })
+        }
+        return out
+      }),
+
+    toggleDietDone: (date, meal) =>
+      mutate((d) =>
+        withDay(d, date, (day) => ({
+          ...day,
+          diet: { ...day.diet, done: { ...day.diet?.done, [meal]: !day.diet?.done?.[meal] } },
+        })),
+      ),
+
     generate: (weekStart) => {
       const { data } = get()
-      const result = generateWeek({ weekStart, recipes: data.recipes, plan: data.plan, settings: data.settings })
+      const nutrition = data.settings.nutrition
+      const dietDays = nutrition.enabled ? assignDietDays(data.plan, weekStart, today()) : {}
+      const fixed = dietFixedSlots(dietDays, weekStart, nutrition, data.recipes)
+      const result = generateWeek({ weekStart, recipes: data.recipes, plan: data.plan, settings: data.settings, fixed })
+      for (const [date, day] of Object.entries(result.days)) {
+        if (dietDays[date]) day.diet = { ...data.plan[date]?.diet, day: dietDays[date] }
+      }
       mutate((d) => ({
         ...d,
         plan: { ...d.plan, ...result.days },

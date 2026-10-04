@@ -40,6 +40,7 @@ export function RecipeCard({ recipe, onOpen, lastUsed }: { recipe: Recipe; onOpe
             <ChefHat size={11} /> Bimby
           </span>
         )}
+        {recipe.tags?.includes('plano') && <span className="rounded-full bg-brand-50 px-1.5 text-[11px] font-medium text-brand-700">Plano</span>}
         {recipe.url && <ExternalLink size={13} className="text-stone-400" />}
       </div>
       <p className="mt-2 line-clamp-2 text-xs text-stone-500">{recipe.ingredients.map((i) => i.name).join(' · ') || 'Sem ingredientes'}</p>

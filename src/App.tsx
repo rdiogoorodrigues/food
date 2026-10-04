@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, Coffee, History, Menu, Settings, ShoppingCart, Apple, UtensilsCrossed, Cloud, CloudOff } from 'lucide-react'
+import { BookOpen, CalendarDays, CircleCheckBig, Coffee, History, Menu, Settings, ShoppingCart, Apple, UtensilsCrossed, Cloud, CloudOff } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { logout, restoreSession } from './auth/auth'
 import { LoginPage } from './auth/LoginPage'
@@ -12,11 +12,13 @@ import { RecipesPage } from './features/recipes/RecipesPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { ShoppingPage } from './features/shopping/ShoppingPage'
 import { SnacksPage } from './features/snacks/SnacksPage'
+import { TodayPage } from './features/today/TodayPage'
 import { onSyncStatus, startPersistence, type SyncStatus } from './store/persistence'
 import { useStore } from './store/useStore'
 import { useUi, type Tab } from './store/useUi'
 
 const NAV: { id: Tab; label: string; icon: ReactNode; primary?: boolean }[] = [
+  { id: 'hoje', label: 'Hoje', icon: <CircleCheckBig size={21} />, primary: true },
   { id: 'semana', label: 'Semana', icon: <CalendarDays size={21} />, primary: true },
   { id: 'receitas', label: 'Receitas', icon: <BookOpen size={21} />, primary: true },
   { id: 'compras', label: 'Compras', icon: <ShoppingCart size={21} />, primary: true },
@@ -81,6 +83,7 @@ function Shell({ user, onLogout }: { user: AppUser; onLogout(): void }) {
   if (!ready) return <Splash />
 
   const page = {
+    hoje: <TodayPage />,
     semana: <PlannerPage />,
     receitas: <RecipesPage />,
     compras: <ShoppingPage />,
@@ -125,7 +128,7 @@ function Shell({ user, onLogout }: { user: AppUser; onLogout(): void }) {
 
       {/* Navegação inferior (telemóvel) */}
       <nav className="no-print safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur md:hidden">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           {NAV.filter((n) => n.primary).map((n) => (
             <NavButton key={n.id} active={tab === n.id} onClick={() => setTab(n.id)} icon={n.icon} label={n.label} />
           ))}

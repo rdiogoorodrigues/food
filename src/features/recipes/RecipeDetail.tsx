@@ -4,6 +4,7 @@ import { Sheet } from '../../components/Sheet'
 import { useToast } from '../../components/Toast'
 import { Button, CategoryBadge } from '../../components/ui'
 import { dayMonth } from '../../lib/date'
+import { portionFor } from '../../data/nutritionPlan'
 import { recipeUsage } from '../../lib/history'
 import { formatQty } from '../../lib/shopping'
 import { useStore } from '../../store/useStore'
@@ -69,6 +70,17 @@ export function RecipeDetail({ recipeId, onClose }: { recipeId: string | null; o
           </li>
         ))}
       </ul>
+
+      {portionFor(recipe.id) && (
+        <div className="mt-4 rounded-xl bg-brand-50 p-3">
+          <h4 className="mb-1 text-sm font-semibold text-brand-700">Porção do Diogo (plano)</h4>
+          <ul className="space-y-0.5 text-sm text-stone-700">
+            {portionFor(recipe.id)!.map((p) => (
+              <li key={p}>• {p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {recipe.url && (
         <a href={recipe.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:underline">

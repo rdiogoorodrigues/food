@@ -1,3 +1,5 @@
+import type { DietDayId, DietMeal } from './data/nutritionPlan'
+
 export type Category =
   | 'carne-branca'
   | 'carne-vermelha'
@@ -55,6 +57,20 @@ export interface DayPlan {
   dinner?: Slot
   /** Ingrediente variável da sopa do jantar. */
   soup?: SoupVariant
+  /** Plano alimentar individual do Diogo neste dia. */
+  diet?: DietPlanDay
+}
+
+export interface DietPlanDay {
+  day?: DietDayId
+  /** Refeições cumpridas. */
+  done?: Partial<Record<DietMeal, boolean>>
+}
+
+export interface NutritionSettings {
+  enabled: boolean
+  /** Dias da semana (0 = segunda) em que almoço e jantar seguem o plano. */
+  templateWeekdays: number[]
 }
 
 export type SoupVariant = 'couve' | 'espinafres' | 'nabo' | 'grão'
@@ -75,6 +91,7 @@ export interface Settings {
   soupBatchesPerWeek: number
   /** Janela, em dias, para evitar repetições. */
   noRepeatDays: number
+  nutrition: NutritionSettings
 }
 
 export interface ExtraShoppingItem {

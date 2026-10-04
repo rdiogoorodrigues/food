@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { addDays, startOfWeek, today } from '../lib/date'
 
-export type Tab = 'semana' | 'receitas' | 'compras' | 'pequeno-almoco' | 'lanches' | 'historico' | 'definicoes'
+export type Tab = 'hoje' | 'semana' | 'receitas' | 'compras' | 'pequeno-almoco' | 'lanches' | 'historico' | 'definicoes'
 
-const TABS: Tab[] = ['semana', 'receitas', 'compras', 'pequeno-almoco', 'lanches', 'historico', 'definicoes']
+const TABS: Tab[] = ['hoje', 'semana', 'receitas', 'compras', 'pequeno-almoco', 'lanches', 'historico', 'definicoes']
 
 function tabFromHash(): Tab {
   const h = location.hash.replace('#/', '').replace('#', '') as Tab

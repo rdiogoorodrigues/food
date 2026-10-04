@@ -35,6 +35,8 @@ export interface GenerateOptions {
   settings: Settings
   rng?: () => number
   attempts?: number
+  /** Slots já definidos (índice 0–13: dia*2 + 0 almoço / 1 jantar), ex.: refeições do plano alimentar. Contam para as quotas. */
+  fixed?: Record<number, Slot>
 }
 
 export interface GenerateResult {
@@ -100,8 +102,25 @@ export function generateWeek(opts: GenerateOptions): GenerateResult {
   const mondayLunch = opts.plan[opts.weekStart]?.lunch
   const inherited = mondayLunch?.kind === 'recipe' && mondayLunch.leftoverOf && mondayLunch.leftoverOf < opts.weekStart ? mondayLunch : undefined
 
-  const fixedSlots = 1 /* pizza */ + 1 /* take away */ + (inherited ? 1 : 0)
-  const quotas = normalizeQuotas(opts.settings.quotas, SLOTS - fixedSlots)
+  // Slots fixos externos (nunca a sexta ao jantar, que é sempre pizza).
+  const fixed = new Map<number, Slot>()
+  if (inherited) fixed.set(0, inherited)
+  for (const [k, slot] of Object.entries(opts.fixed ?? {})) {
+    const idx = Number(k)
+    if (idx !== FRIDAY_DINNER && idx >= 0 && idx < SLOTS) fixed.set(idx, slot)
+  }
+
+  // As refeições fixas descontam às quotas da respetiva categoria.
+  const remaining = { ...opts.settings.quotas }
+  for (const [idx, slot] of fixed) {
+    if (idx === 0 && slot === inherited) continue
+    if (slot.kind !== 'recipe') continue
+    const cat = opts.recipes.find((r) => r.id === slot.recipeId)?.category
+    if (cat && cat in remaining) remaining[cat as keyof Quotas] = Math.max(0, remaining[cat as keyof Quotas] - 1)
+  }
+
+  const fixedSlots = 1 /* pizza */ + 1 /* take away */ + fixed.size
+  const quotas = normalizeQuotas(remaining, SLOTS - fixedSlots)
   const cookCount = Object.values(quotas).reduce((a, b) => a + b, 0)
   const leftoverCount = SLOTS - fixedSlots - cookCount
 
@@ -148,16 +167,21 @@ export function generateWeek(opts: GenerateOptions): GenerateResult {
   function buildAttempt(): { slots: SlotPlan[]; score: number } | undefined {
     const slots: SlotPlan[] = Array.from({ length: SLOTS }, () => ({ type: 'cook' }) as SlotPlan)
     slots[FRIDAY_DINNER] = { type: 'pizza' }
-    if (inherited) slots[0] = { type: 'fixed', slot: inherited }
+    for (const [idx, slot] of fixed) slots[idx] = { type: 'fixed', slot }
 
     const free = () => slots.map((s, k) => (s.type === 'cook' ? k : -1)).filter((k) => k >= 0)
     const takeaway = pick(free(), rng)!
     slots[takeaway] = { type: 'takeaway' }
 
     // Almoços de sobras: o slot anterior tem de ser um jantar cozinhado. Preferir dias úteis (marmita).
+    // Sem sítio para sobras, o slot fica para mais uma refeição vegetariana (penalizada).
+    let extraCook = 0
     for (let n = 0; n < leftoverCount; n++) {
       const candidates = free().filter((k) => isLunch(k) && k > 0 && slots[k - 1].type === 'cook' && slots[k - 2]?.type !== 'leftover')
-      if (!candidates.length) return undefined
+      if (!candidates.length) {
+        extraCook++
+        continue
+      }
       const weekday = candidates.filter((k) => k / 2 <= 4)
       const chosen = pick(weekday.length && rng() < 0.8 ? weekday : candidates, rng)!
       slots[chosen] = { type: 'leftover' }
@@ -166,11 +190,14 @@ export function generateWeek(opts: GenerateOptions): GenerateResult {
     // Categorias: distribuídas, sem duas iguais seguidas no que efetivamente se come.
     const cookIdx = free()
     const bag = shuffle(
-      (Object.entries(quotas) as [Category, number][]).flatMap(([c, n]) => Array<Category>(n).fill(c)),
+      [
+        ...(Object.entries(quotas) as [Category, number][]).flatMap(([c, n]) => Array<Category>(n).fill(c)),
+        ...Array<Category>(extraCook).fill('vegetariano'),
+      ],
       rng,
     )
     if (bag.length !== cookIdx.length) return undefined
-    let score = 0
+    let score = -20 * extraCook
     for (const idx of cookIdx) {
       const prevCat = eatenCategory(slots, idx - 1)
       const prev2Cat = eatenCategory(slots, idx - 2)
@@ -191,7 +218,7 @@ export function generateWeek(opts: GenerateOptions): GenerateResult {
     }
 
     // Receitas.
-    const usedThisWeek = new Set<string>()
+    const usedThisWeek = new Set<string>([...fixed.values()].flatMap((f) => (f.kind === 'recipe' ? [f.recipeId] : [])))
     for (const idx of cookIdx) {
       const s = slots[idx] as Extract<SlotPlan, { type: 'cook' }>
       const pool = byCategory.get(s.category!) ?? []

@@ -6,12 +6,14 @@ Aplicação web privada, *mobile first*, para o Diogo e a namorada planearem alm
 
 ## Funcionalidades
 
+- **Hoje (plano do Diogo)** — as 5 refeições do dia (pequeno-almoço, almoço, lanche, jantar, ceia) com horários e porções individuais, botão para marcar cada uma como cumprida, adesão semanal (objetivo ≥ 80%) e o que preparar na véspera (overnight oats, ovos cozidos, pudim de chia). Almoços/jantares fora do plano mostram a regra do prato; pizza e take away aparecem como excepções planeadas.
+- **Plano alimentar** — Dias 1/2/3 em rotação contínua. Ao gerar a semana, de segunda a quinta (configurável) o almoço e o jantar do casal são os do plano e contam para as quotas; o gerador completa os restantes dias, mantendo pizza à sexta e um take away. A etiqueta “Dia N” em cada dia do calendário permite mudar o dia do plano manualmente. Porções só para o Diogo; as receitas do casal estão em quantidades para dois e em peso cru.
 - **Semana** — calendário semanal (almoço + jantar), com a nota fixa “Sopa” ao jantar (base courgete, cenoura, cebola + couve/espinafres/nabo/grão).
   - Tocar num dia para escolher receita, trocar, copiar, mover/trocar com outro dia ou remover.
   - Arrastar receitas da faixa “Arrastar receitas para o calendário” ou entre dias (no telemóvel: toque longo).
   - Ao colocar uma receita ao jantar pergunta *“Existem sobras para almoço do dia seguinte?”* — se sim, cria o almoço de sobras e duplica as quantidades na lista de compras.
 - **Gerar Semana Automática** — ver algoritmo abaixo.
-- **Lista de compras** — consolidada por secção (Carne, Peixe, Legumes, Fruta, Lacticínios, Mercearia, Congelados), soma quantidades (`500 g + 700 g = 1,2 kg`), marcar como comprado, itens extra, imprimir e exportar PDF.
+- **Lista de compras** — inclui pequeno-almoço, lanche e ceia do plano do Diogo; consolidada por secção (Carne, Peixe, Legumes, Fruta, Lacticínios, Mercearia, Congelados), soma quantidades (`500 g + 700 g = 1,2 kg`), marcar como comprado, itens extra, imprimir e exportar PDF.
 - **Receitas** — cartões, pesquisa por nome, filtros (favoritas, Bimby, categoria), formulário simples.
 - **Pequenos-almoços**, **Lanches** (com sugestões saciantes proteína + fruta), **Histórico** (últimas semanas, frequência de cada receita, receitas nunca feitas), **Definições** (quotas, panelas de sopa, janela anti-repetição, exportar/importar cópia JSON).
 

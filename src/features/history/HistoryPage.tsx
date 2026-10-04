@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Card, Chip, Empty, PageHeader } from '../../components/ui'
 import { CATEGORIES } from '../../lib/categories'
 import { dayMonth, startOfWeek, today, weekDays, weekRangeLabel, weekdayName } from '../../lib/date'
+import { adherence } from '../../lib/diet'
 import { planEntries } from '../../lib/history'
 import { useStore } from '../../store/useStore'
 import { useUi } from '../../store/useUi'
@@ -120,6 +121,14 @@ function WeekSummary({ weekStart }: { weekStart: string }) {
         >
           {weekRangeLabel(weekStart)}
         </button>
+        {(() => {
+          const a = adherence(plan, weekDays(weekStart), today())
+          return a.total ? (
+            <span className={`rounded-full px-1.5 text-[11px] font-semibold ${a.pct >= 80 ? 'bg-brand-50 text-brand-700' : 'bg-amber-50 text-amber-700'}`}>
+              Plano {a.pct}%
+            </span>
+          ) : null
+        })()}
         <div className="ml-auto flex flex-wrap gap-1">
           {CATEGORIES.filter((c) => counts.get(c.id)).map((c) => (
             <span key={c.id} className={`rounded-full px-1.5 text-[11px] ring-1 ring-inset ${c.color}`}>

@@ -18,6 +18,7 @@ import { WeekNav } from '../../components/WeekNav'
 import { categoryMeta } from '../../lib/categories'
 import { addDays, dayMonth, today, weekDays, weekdayName } from '../../lib/date'
 import { buildShoppingList, normalizeName } from '../../lib/shopping'
+import { DIET_DAYS, type DietDayId } from '../../data/nutritionPlan'
 import { SOUP_VARIANTS, soupLabel } from '../../data/soup'
 import { useStore, type SlotRef } from '../../store/useStore'
 import { useUi } from '../../store/useUi'
@@ -31,7 +32,7 @@ type DragData = { recipe?: Slot; from?: SlotRef }
 
 export function PlannerPage() {
   const data = useStore((s) => s.data)
-  const { setSlot, moveSlot, addLeftovers, generate, clearWeek, setSoup } = useStore()
+  const { setSlot, moveSlot, addLeftovers, generate, clearWeek, setSoup, setDietDay } = useStore()
   const { weekStart, setTab } = useUi()
   const toast = useToast((s) => s.show)
   const days = weekDays(weekStart)
@@ -42,6 +43,9 @@ export function PlannerPage() {
   const [openRecipe, setOpenRecipe] = useState<string | null>(null)
   const [dragLabel, setDragLabel] = useState<string | null>(null)
   const [soupDay, setSoupDay] = useState<string | null>(null)
+  const [dietDate, setDietDate] = useState<string | null>(null)
+  const [applyMeals, setApplyMeals] = useState(true)
+  const nutritionOn = data.settings.nutrition.enabled
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -127,7 +131,20 @@ export function PlannerPage() {
                     <span className="lg:hidden">{weekdayName(date)}</span>
                     <span className="hidden lg:inline">{weekdayName(date, true)}</span>
                   </span>
-                  <span className="text-xs text-stone-400">{isToday ? 'Hoje' : dayMonth(date)}</span>
+                  <span className="flex items-center gap-1.5">
+                    {nutritionOn && (
+                      <button
+                        onClick={() => setDietDate(date)}
+                        className={`no-print rounded-full px-1.5 text-[10px] font-semibold ring-1 ring-inset ${
+                          day?.diet?.day ? 'bg-brand-50 text-brand-700 ring-brand-100' : 'text-stone-400 ring-stone-200'
+                        }`}
+                        title="Dia do plano alimentar"
+                      >
+                        {day?.diet?.day ? `Dia ${day.diet.day}` : 'Plano'}
+                      </button>
+                    )}
+                    <span className="text-xs text-stone-400">{isToday ? 'Hoje' : dayMonth(date)}</span>
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 lg:grid-cols-1">
                   {(['lunch', 'dinner'] as MealType[]).map((meal) => (
@@ -236,6 +253,42 @@ export function PlannerPage() {
           a contar com quantidades a dobrar.
           {nextLunch && !nextLunch.leftover && <span className="mt-2 block text-amber-700">Substitui: {nextLunch.title}</span>}
         </p>
+      </Sheet>
+
+      <Sheet open={!!dietDate} onClose={() => setDietDate(null)} title={dietDate ? `Plano alimentar · ${weekdayName(dietDate)} ${dayMonth(dietDate)}` : ''}>
+        <div className="space-y-2">
+          {DIET_DAYS.map((d) => (
+            <button
+              key={d.id}
+              onClick={() => {
+                setDietDay(dietDate!, d.id as DietDayId, applyMeals)
+                setDietDate(null)
+              }}
+              className={`w-full rounded-xl p-3 text-left ring-1 ring-inset hover:bg-brand-50 ${
+                data.plan[dietDate ?? '']?.diet?.day === d.id ? 'bg-brand-50 ring-brand-500' : 'ring-stone-200'
+              }`}
+            >
+              <div className="font-semibold">Dia {d.id}</div>
+              <div className="mt-0.5 text-xs text-stone-500">
+                Almoço: {recipeMap.get(d.lunch.recipeId)?.name} · Jantar: {recipeMap.get(d.dinner.recipeId)?.name}
+              </div>
+            </button>
+          ))}
+          <label className="flex items-center gap-2 px-1 py-2 text-sm">
+            <input type="checkbox" className="size-4 accent-brand-600" checked={applyMeals} onChange={(e) => setApplyMeals(e.target.checked)} />
+            Colocar também o almoço e o jantar do plano no calendário
+          </label>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setDietDay(dietDate!, undefined, false)
+              setDietDate(null)
+            }}
+          >
+            Sem plano neste dia
+          </Button>
+        </div>
       </Sheet>
 
       <Sheet open={!!soupDay} onClose={() => setSoupDay(null)} title="Sopa do jantar">

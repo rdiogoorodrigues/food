@@ -1,12 +1,14 @@
 import { Download, LogOut, Minus, Plus, Upload } from 'lucide-react'
 import { useRef } from 'react'
 import { useToast } from '../../components/Toast'
-import { Button, Card, PageHeader } from '../../components/ui'
+import { Button, Card, Chip, PageHeader } from '../../components/ui'
 import { categoryMeta } from '../../lib/categories'
 import { supabase } from '../../lib/supabase'
 import { exportJSON } from '../../store/persistence'
 import { useStore } from '../../store/useStore'
 import type { AppData, Quotas } from '../../types'
+
+const WEEKDAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
 function Stepper({ value, onChange, min = 0, max = 14 }: { value: number; onChange(v: number): void; min?: number; max?: number }) {
   return (
@@ -28,7 +30,7 @@ export function SettingsPage({ onLogout }: { onLogout(): void }) {
   const { updateSettings, replaceAll } = useStore()
   const toast = useToast((s) => s.show)
   const fileRef = useRef<HTMLInputElement>(null)
-  const { quotas } = data.settings
+  const { quotas, nutrition } = data.settings
   const total = Object.values(quotas).reduce((a, b) => a + b, 0)
   const leftovers = Math.max(0, 12 - total)
 
@@ -67,9 +69,53 @@ export function SettingsPage({ onLogout }: { onLogout(): void }) {
           })}
         </div>
         <p className="mt-3 rounded-xl bg-stone-50 p-3 text-sm text-stone-600">
-          14 refeições = 1 pizza + 1 take away + <b>{total}</b> cozinhadas + <b>{leftovers}</b> almoço(s) de sobras.
+          14 refeições = 1 pizza + 1 take away + <b>{total}</b> cozinhadas + <b>{leftovers}</b> almoço(s) de sobras. As refeições do
+          plano contam para estas quotas.
           {total > 12 && <span className="block text-amber-700">Excede as 12 refeições disponíveis — o gerador reduz automaticamente.</span>}
         </p>
+      </Card>
+
+      <Card className="p-4">
+        <label className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Plano alimentar do Diogo</h2>
+            <p className="text-sm text-stone-500">Dias 1/2/3 em rotação, ecrã “Hoje” e compras das refeições individuais.</p>
+          </div>
+          <input
+            type="checkbox"
+            className="size-5 shrink-0 accent-brand-600"
+            checked={nutrition.enabled}
+            onChange={(e) => updateSettings({ nutrition: { ...nutrition, enabled: e.target.checked } })}
+          />
+        </label>
+        {nutrition.enabled && (
+          <>
+            <p className="mb-2 mt-3 text-sm text-stone-600">Dias em que o almoço e o jantar do casal seguem o plano:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAY_LABELS.map((label, w) => (
+                <Chip
+                  key={label}
+                  active={nutrition.templateWeekdays.includes(w)}
+                  onClick={() =>
+                    updateSettings({
+                      nutrition: {
+                        ...nutrition,
+                        templateWeekdays: nutrition.templateWeekdays.includes(w)
+                          ? nutrition.templateWeekdays.filter((x) => x !== w)
+                          : [...nutrition.templateWeekdays, w].sort(),
+                      },
+                    })
+                  }
+                >
+                  {label}
+                </Chip>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-stone-500">
+              Nos restantes dias o gerador completa as quotas; sexta ao jantar é sempre pizza e o take away cai num dia livre.
+            </p>
+          </>
+        )}
       </Card>
 
       <Card className="space-y-3 p-4">

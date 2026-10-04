@@ -1,3 +1,4 @@
+import { dietDay } from '../data/nutritionPlan'
 import { SOUP_BASE, SOUP_VARIANTS } from '../data/soup'
 import type { Aisle, AppData, Ingredient, Plan, Recipe, SoupVariant, Unit } from '../types'
 import { guessAisle } from './categories'
@@ -105,6 +106,17 @@ export function buildShoppingList(data: Pick<AppData, 'plan' | 'recipes' | 'sett
       if (!recipe) continue
       const mult = meal === 'dinner' ? leftoverMultiplier(plan, date) : 1
       for (const ing of recipe.ingredients) agg.add(ing, mult, recipe.name)
+    }
+  }
+
+  // Refeições individuais do plano alimentar (pequeno-almoço, lanche, ceia) — porções do Diogo.
+  if (data.settings.nutrition?.enabled) {
+    for (const date of weekDays(weekStart)) {
+      const t = dietDay(plan[date]?.diet?.day)
+      if (!t) continue
+      for (const meal of [t.breakfast, t.snack, t.supper]) {
+        for (const ing of meal.shop) agg.add(ing, 1, 'Plano do Diogo')
+      }
     }
   }
 

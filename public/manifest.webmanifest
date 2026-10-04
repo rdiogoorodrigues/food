@@ -1,0 +1,9 @@
+{
+  "name": "Refeições a Dois",
+  "short_name": "Refeições",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f7f7f5",
+  "theme_color": "#2f8f5b",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

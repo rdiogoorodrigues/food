@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, CircleCheckBig, Coffee, History, Menu, Settings, ShoppingCart, Apple, UtensilsCrossed, Cloud, CloudOff } from 'lucide-react'
+import { BookOpen, CalendarDays, CircleCheckBig, Coffee, History, Menu, Settings, ShoppingCart, Apple, UtensilsCrossed } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { logout, restoreSession } from './auth/auth'
 import { LoginPage } from './auth/LoginPage'
@@ -13,7 +13,7 @@ import { SettingsPage } from './features/settings/SettingsPage'
 import { ShoppingPage } from './features/shopping/ShoppingPage'
 import { SnacksPage } from './features/snacks/SnacksPage'
 import { TodayPage } from './features/today/TodayPage'
-import { onSyncStatus, startPersistence, type SyncStatus } from './store/persistence'
+import { startPersistence } from './store/persistence'
 import { useStore } from './store/useStore'
 import { useUi, type Tab } from './store/useUi'
 
@@ -59,25 +59,13 @@ function Splash() {
 function Shell({ user, onLogout }: { user: AppUser; onLogout(): void }) {
   const { tab, setTab } = useUi()
   const [ready, setReady] = useState(false)
-  const [sync, setSync] = useState<SyncStatus>('local')
   const [moreOpen, setMoreOpen] = useState(false)
 
   useEffect(() => {
     useStore.getState().setUser(user.displayName)
-    onSyncStatus(setSync)
-    let stop: (() => void) | undefined
-    let cancelled = false
-    startPersistence().then((s) => {
-      if (cancelled) s()
-      else {
-        stop = s
-        setReady(true)
-      }
-    })
-    return () => {
-      cancelled = true
-      stop?.()
-    }
+    const stop = startPersistence()
+    setReady(true)
+    return stop
   }, [user])
 
   if (!ready) return <Splash />
@@ -118,7 +106,6 @@ function Shell({ user, onLogout }: { user: AppUser; onLogout(): void }) {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 text-xs text-stone-500">
-            <span title={syncTitle(sync)}>{sync === 'offline' ? <CloudOff size={16} className="text-amber-600" /> : sync === 'local' ? null : <Cloud size={16} className={sync === 'syncing' ? 'animate-pulse' : 'text-brand-600'} />}</span>
             <span className="flex size-8 items-center justify-center rounded-full bg-stone-200 font-semibold text-stone-700">{user.displayName[0]}</span>
           </div>
         </div>
@@ -165,8 +152,4 @@ function NavButton({ active, onClick, icon, label }: { active: boolean; onClick(
       {label}
     </button>
   )
-}
-
-function syncTitle(s: SyncStatus) {
-  return { local: 'Apenas neste dispositivo', syncing: 'A sincronizar…', synced: 'Sincronizado', offline: 'Sem ligação ao servidor' }[s]
 }

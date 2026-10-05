@@ -2,7 +2,7 @@
 
 Aplicação web privada, *mobile first*, para o Diogo e a namorada planearem almoços e jantares, gerirem receitas e gerarem a lista de compras.
 
-**Stack:** React 19 · TypeScript · Tailwind CSS 4 · Vite · Zustand · dnd-kit · Supabase (opcional) · jsPDF.
+**Stack:** React 19 · TypeScript · Tailwind CSS 4 · Vite · Zustand · dnd-kit · jsPDF.
 
 ## Funcionalidades
 
@@ -41,28 +41,26 @@ npm test           # testes do gerador e da lista de compras
 npm run build
 ```
 
-Login inicial (modo local): `diogo` / `refeicoes` e `namorada` / `refeicoes`. **Mudem-nas** (ver abaixo).
+Login (conta única partilhada): utilizador `casal`, palavra-passe `comida2026`. Para mudar, ver abaixo.
 
 ## Publicação (GitHub Pages)
 
-1. *Settings → Pages → Source: GitHub Actions*.
-2. Gerar os hashes das palavras-passe: `npm run hash-password -- diogo "palavra-passe"`.
-3. *Settings → Secrets and variables → Actions*:
-   - Secrets: `VITE_DIOGO_PASSWORD_HASH`, `VITE_PARTNER_PASSWORD_HASH`
-   - Variables (opcional): `VITE_PARTNER_USERNAME`, `VITE_PARTNER_NAME`
-4. Push para `main` → o workflow `.github/workflows/deploy.yml` testa, compila e publica.
+1. *Settings → Pages → Build and deployment → Source: GitHub Actions*.
+2. Cada push para `main` corre `.github/workflows/deploy.yml` (testes + build + publicação).
+3. Endereço: `https://rdiogoorodrigues.github.io/food/`.
 
-## Segurança e sincronização — ler antes de usar
+### Mudar o utilizador/palavra-passe
 
-- **Modo local (por defeito):** os dados ficam no `localStorage` de cada dispositivo. *O telemóvel do Diogo e o da namorada não partilham dados.* O login é apenas uma barreira cosmética: num site estático, quem abrir o código JavaScript pode contorná-lo. Não guardem nada sensível.
-- **Modo Supabase (recomendado para uso a dois):** autenticação real e dados partilhados em tempo real.
-  1. Criar projeto gratuito em supabase.com.
-  2. Executar `supabase/schema.sql` no SQL Editor.
-  3. *Authentication → Users*: criar as duas contas (email + palavra-passe). **Desativar “Allow new users to sign up”** — caso contrário qualquer pessoa pode criar conta e ler os dados.
-  4. Definir as variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_DIOGO_EMAIL`, `VITE_PARTNER_EMAIL`.
-  5. No login continua a usar-se o nome de utilizador (`diogo`); a app traduz para o email.
+1. `npm run hash-password -- casal "nova-palavra-passe"`
+2. *Settings → Secrets and variables → Actions*:
+   - Secret `VITE_PASSWORD_HASH` = hash gerado
+   - Variable `VITE_USERNAME` (opcional, por defeito `casal`)
+3. Re-executar o workflow. As sessões abertas terminam automaticamente.
 
-  Sincronização: o estado é um único documento JSON, *last-write-wins*. Para duas pessoas é suficiente; edições simultâneas no mesmo segundo podem sobrepor-se.
+## Dados e segurança
+
+- Os dados ficam no `localStorage` de **cada dispositivo** (sem servidor). Dois telemóveis não partilham planos nem listas; use *Definições → Exportar/Importar* para passar dados entre dispositivos.
+- O login é uma barreira simples: num site estático, quem inspecionar o código JavaScript consegue contorná-lo. Não guardar nada sensível.
 
 ## Estrutura
 
@@ -72,7 +70,6 @@ src/
   components/      UI partilhada (Sheet, botões, toast, navegação de semana)
   data/            receitas iniciais, sopa, lanches
   features/        planner, recipes, shopping, breakfast, snacks, history, settings
-  lib/             gerador, lista de compras, datas, histórico, PDF, Supabase
-  store/           estado (Zustand) e persistência local/Supabase
-supabase/schema.sql
+  lib/             gerador, lista de compras, plano alimentar, datas, histórico, PDF
+  store/           estado (Zustand) e persistência local
 ```

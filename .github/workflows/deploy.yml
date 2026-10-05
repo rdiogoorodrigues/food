@@ -27,14 +27,8 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          VITE_DIOGO_PASSWORD_HASH: ${{ secrets.VITE_DIOGO_PASSWORD_HASH }}
-          VITE_PARTNER_USERNAME: ${{ vars.VITE_PARTNER_USERNAME }}
-          VITE_PARTNER_NAME: ${{ vars.VITE_PARTNER_NAME }}
-          VITE_PARTNER_PASSWORD_HASH: ${{ secrets.VITE_PARTNER_PASSWORD_HASH }}
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
-          VITE_DIOGO_EMAIL: ${{ vars.VITE_DIOGO_EMAIL }}
-          VITE_PARTNER_EMAIL: ${{ vars.VITE_PARTNER_EMAIL }}
+          VITE_USERNAME: ${{ vars.VITE_USERNAME }}
+          VITE_PASSWORD_HASH: ${{ secrets.VITE_PASSWORD_HASH }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

@@ -3,7 +3,6 @@ import { useRef } from 'react'
 import { useToast } from '../../components/Toast'
 import { Button, Card, Chip, PageHeader } from '../../components/ui'
 import { categoryMeta } from '../../lib/categories'
-import { supabase } from '../../lib/supabase'
 import { exportJSON } from '../../store/persistence'
 import { useStore } from '../../store/useStore'
 import type { AppData, Quotas } from '../../types'
@@ -138,9 +137,7 @@ export function SettingsPage({ onLogout }: { onLogout(): void }) {
       <Card className="p-4">
         <h2 className="font-semibold">Dados</h2>
         <p className="mb-3 text-sm text-stone-500">
-          {supabase
-            ? 'Sincronizado entre dispositivos via Supabase.'
-            : 'Guardado apenas neste dispositivo. Configure o Supabase (ver README) para partilhar entre os dois telemóveis.'}
+          Os dados ficam guardados neste dispositivo. Para passar para outro telemóvel ou computador, exporte uma cópia aqui e importe-a lá.
         </p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => exportJSON(data)}>
